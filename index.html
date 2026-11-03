@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CUBE WARS</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #111;
+    font-family: Arial, sans-serif;
+}
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    background: url("hintergrund.jpg") center / cover no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 9vh;
+}
+
+#startButton {
+    width: 270px;
+    height: 70px;
+    background: #ffcf00;
+    border: none;
+    color: #111;
+    font-size: 25px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transform: skew(-5deg);
+}
+
+#startButton:hover {
+    background: white;
+}
+
+#loadingScreen {
+    position: fixed;
+    inset: 0;
+    background: #111;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    gap: 18px;
+}
+
+#status {
+    font-size: 17px;
+    letter-spacing: 2px;
+}
+
+#elapsed {
+    color: #ffcf00;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+#progressContainer {
+    width: min(450px, 80vw);
+    height: 13px;
+    background: #333;
+    overflow: hidden;
+}
+
+#progressBar {
+    width: 0%;
+    height: 100%;
+    background: #ffcf00;
+    transition: width .2s;
+}
+
+#gameFrame {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="startScreen">
+    <button id="startButton" onclick="startGame()">START</button>
+</div>
+
+<div id="loadingScreen">
+    <div id="status">SERVER WIRD GESTARTET</div>
+
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+    </div>
+
+    <div id="elapsed">0 s</div>
+</div>
+
+<iframe id="gameFrame"></iframe>
+
+<script>
+const SERVER_URL = "https://cube-quor.onrender.com";
+const GAME_URL = SERVER_URL + "/";
+
+let started = false;
+let startTime = 0;
+let timer;
+
+function updateTime() {
+    const seconds = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById("elapsed").textContent = seconds + " s";
+}
+
+async function checkServer() {
+    while (started) {
+        try {
+            document.getElementById("status").textContent =
+                "VERBINDUNG ZUM SERVER ...";
+
+            const response = await fetch(
+                SERVER_URL + "/",
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    mode: "cors"
+                }
+            );
+
+            if (response.ok) {
+                document.getElementById("status").textContent =
+                    "SERVER ONLINE";
+
+                document.getElementById("progressBar").style.width = "100%";
+
+                loadLobby();
+                return;
+            }
+
+            document.getElementById("status").textContent =
+                "SERVER ANTWORTET NOCH NICHT";
+
+        } catch (error) {
+            document.getElementById("status").textContent =
+                "SERVER WIRD AUFGEWECKT ...";
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+}
+
+function loadLobby() {
+    clearInterval(timer);
+
+    const frame = document.getElementById("gameFrame");
+
+    frame.onload = () => {
+        document.getElementById("loadingScreen").style.display = "none";
+        frame.style.display = "block";
+    };
+
+    frame.src = GAME_URL;
+}
+
+function startGame() {
+    if (started) return;
+
+    started = true;
+    startTime = Date.now();
+
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("loadingScreen").style.display = "flex";
+
+    timer = setInterval(updateTime, 250);
+
+    checkServer();
+}
+</script>
+
+</body>
+</html>
