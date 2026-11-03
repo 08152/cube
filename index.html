@@ -4,6 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>CUBE WARS</title>
 
 <style>
@@ -21,41 +22,66 @@ body {
     font-family: Arial, sans-serif;
 }
 
+/* STARTBILDSCHIRM */
+
 #startScreen {
     position: fixed;
     inset: 0;
-    background: url("hintergrund.png") center / cover no-repeat;
+
+    background:
+        url("hintergrund.png")
+        center center / cover no-repeat;
+
     display: flex;
     justify-content: center;
     align-items: flex-end;
+
     padding-bottom: 9vh;
 }
 
 #startButton {
     width: 270px;
     height: 70px;
+
     background: #ffcf00;
     border: none;
+
     color: #111;
     font-size: 25px;
     font-weight: 900;
     letter-spacing: 3px;
+
     cursor: pointer;
+
     transform: skew(-5deg);
+    box-shadow: 0 5px 25px #0008;
+
+    transition: .2s;
 }
 
 #startButton:hover {
     background: white;
+    transform: skew(-5deg) scale(1.07);
 }
+
+#startButton:active {
+    transform: skew(-5deg) scale(.96);
+}
+
+/* LADEBILDSCHIRM */
 
 #loadingScreen {
     position: fixed;
     inset: 0;
+
     background: #111;
+
     display: none;
     flex-direction: column;
+
     justify-content: center;
     align-items: center;
+
     color: white;
     gap: 18px;
 }
@@ -63,6 +89,7 @@ body {
 #status {
     font-size: 17px;
     letter-spacing: 2px;
+    text-align: center;
 }
 
 #elapsed {
@@ -74,6 +101,7 @@ body {
 #progressContainer {
     width: min(450px, 80vw);
     height: 13px;
+
     background: #333;
     overflow: hidden;
 }
@@ -81,57 +109,98 @@ body {
 #progressBar {
     width: 0%;
     height: 100%;
+
     background: #ffcf00;
-    transition: width .2s;
+
+    transition: width .3s;
 }
+
+/* SPIEL */
 
 #gameFrame {
     position: fixed;
     inset: 0;
+
     width: 100%;
     height: 100%;
+
     border: none;
     display: none;
+
+    background: #111;
 }
 </style>
 </head>
 
 <body>
 
+<!-- STARTSEITE -->
+
 <div id="startScreen">
-    <button id="startButton" onclick="startGame()">START</button>
+
+    <button id="startButton" onclick="startGame()">
+        START
+    </button>
+
 </div>
 
+<!-- LADESEITE -->
+
 <div id="loadingScreen">
-    <div id="status">SERVER WIRD GESTARTET</div>
+
+    <div id="status">
+        SERVER WIRD AUFGEWECKT ...
+    </div>
 
     <div id="progressContainer">
         <div id="progressBar"></div>
     </div>
 
-    <div id="elapsed">0 s</div>
+    <div id="elapsed">
+        0 s
+    </div>
+
 </div>
 
-<iframe id="gameFrame"></iframe>
+<!-- SPIEL-IFRAME -->
+
+<iframe
+    id="gameFrame"
+    title="CUBE WARS"
+    allow="fullscreen"
+    allowfullscreen>
+</iframe>
 
 <script>
+
+/* SERVER */
+
 const SERVER_URL = "https://cube-quor.onrender.com";
 const GAME_URL = SERVER_URL + "/";
 
 let started = false;
 let startTime = 0;
-let timer;
+let timeInterval = null;
+
+/* WARTEZEIT */
 
 function updateTime() {
-    const seconds = Math.floor((Date.now() - startTime) / 1000);
-    document.getElementById("elapsed").textContent = seconds + " s";
+
+    const seconds = Math.floor(
+        (Date.now() - startTime) / 1000
+    );
+
+    document.getElementById("elapsed").textContent =
+        seconds + " s";
 }
 
+/* SERVER PRÜFEN */
+
 async function checkServer() {
+
     while (started) {
+
         try {
-            document.getElementById("status").textContent =
-                "VERBINDUNG ZUM SERVER ...";
 
             const response = await fetch(
                 SERVER_URL + "/",
@@ -143,53 +212,78 @@ async function checkServer() {
             );
 
             if (response.ok) {
+
                 document.getElementById("status").textContent =
                     "SERVER ONLINE";
 
-                document.getElementById("progressBar").style.width = "100%";
+                document.getElementById("progressBar").style.width =
+                    "100%";
 
                 loadLobby();
+
                 return;
             }
 
-            document.getElementById("status").textContent =
-                "SERVER ANTWORTET NOCH NICHT";
-
         } catch (error) {
-            document.getElementById("status").textContent =
-                "SERVER WIRD AUFGEWECKT ...";
+
+            // Server noch nicht erreichbar.
+            // Status bleibt stabil.
+
         }
 
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve =>
+            setTimeout(resolve, 5000)
+        );
     }
 }
 
+/* LOBBY LADEN */
+
 function loadLobby() {
-    clearInterval(timer);
 
     const frame = document.getElementById("gameFrame");
 
-    frame.onload = () => {
-        document.getElementById("loadingScreen").style.display = "none";
+    document.getElementById("status").textContent =
+        "LOBBY WIRD GELADEN ...";
+
+    frame.onload = function() {
+
+        document.getElementById("loadingScreen").style.display =
+            "none";
+
         frame.style.display = "block";
+
+        clearInterval(timeInterval);
     };
 
     frame.src = GAME_URL;
 }
 
+/* START */
+
 function startGame() {
+
     if (started) return;
 
     started = true;
     startTime = Date.now();
 
-    document.getElementById("startScreen").style.display = "none";
-    document.getElementById("loadingScreen").style.display = "flex";
+    document.getElementById("startScreen").style.display =
+        "none";
 
-    timer = setInterval(updateTime, 250);
+    document.getElementById("loadingScreen").style.display =
+        "flex";
+
+    document.getElementById("status").textContent =
+        "SERVER WIRD AUFGEWECKT ...";
+
+    timeInterval = setInterval(updateTime, 250);
+
+    updateTime();
 
     checkServer();
 }
+
 </script>
 
 </body>
