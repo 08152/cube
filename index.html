@@ -4,7 +4,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CUBE WARS</title>
+
+<title>CUBE WAR</title>
 
 <style>
 * {
@@ -17,8 +18,9 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #111;
+    background: #10131b;
     font-family: Arial, sans-serif;
+    color: white;
 }
 
 /* STARTBILDSCHIRM */
@@ -26,7 +28,10 @@ body {
 #startScreen {
     position: fixed;
     inset: 0;
-    background: url("hintergrund.png") center center / cover no-repeat;
+
+    background:
+        linear-gradient(to top, #000a, transparent 55%),
+        url("hintergrund.png") center center / cover no-repeat;
 
     display: flex;
     justify-content: center;
@@ -37,15 +42,22 @@ body {
 #startButton {
     width: 270px;
     height: 70px;
-    background: #ffcf00;
+
+    background: linear-gradient(135deg, #ffe16a, #ffb900);
+
     border: none;
-    color: #111;
+    color: #171717;
+
     font-size: 25px;
-    font-weight: 900;
-    letter-spacing: 3px;
+    font-weight: 1000;
+    letter-spacing: 4px;
+
     cursor: pointer;
+
     transform: skew(-5deg);
-    box-shadow: 0 5px 25px #0008;
+
+    box-shadow: 0 5px 30px #0009;
+
     transition: .2s;
 }
 
@@ -54,56 +66,138 @@ body {
     transform: skew(-5deg) scale(1.07);
 }
 
+#startButton:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
 /* LADEBILDSCHIRM */
 
 #loadingScreen {
     position: fixed;
     inset: 0;
-    background: #111;
+
+    background:
+        radial-gradient(ellipse at center, #24364f, #10131b 70%);
+
     display: none;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
     color: white;
-    gap: 18px;
+    gap: 22px;
+    padding: 25px;
+}
+
+.logo {
+    font-size: 42px;
+    font-weight: 1000;
+    letter-spacing: 5px;
+    margin-bottom: 35px;
+}
+
+.logo span {
+    color: #ffbd35;
 }
 
 #status {
-    font-size: 17px;
+    font-size: 15px;
+    font-weight: bold;
     letter-spacing: 2px;
+    text-align: center;
+}
+
+#description {
+    color: #aab8ca;
+    font-size: 12px;
     text-align: center;
 }
 
 #progressContainer {
     width: min(450px, 80vw);
-    height: 13px;
-    background: #333;
+    height: 12px;
+
+    background: #303b4d;
+    border-radius: 20px;
     overflow: hidden;
 }
 
 #progressBar {
     width: 0%;
     height: 100%;
-    background: #ffcf00;
-    transition: width .3s;
+
+    background: linear-gradient(90deg, #ffad20, #ffe16a);
+
+    border-radius: 20px;
+
+    transition: width .4s;
+}
+
+#progressBar.indeterminate {
+    width: 35%;
+    animation: loading 1.4s infinite ease-in-out;
+}
+
+@keyframes loading {
+    0% {
+        transform: translateX(-110%);
+    }
+
+    100% {
+        transform: translateX(320%);
+    }
 }
 
 #elapsed {
     color: #ffcf00;
     font-size: 22px;
     font-weight: bold;
+    font-variant-numeric: tabular-nums;
 }
 
-/* SPIEL */
+#retryButton {
+    display: none;
+    padding: 14px 30px;
+    background: #ffbd35;
+    border: none;
+    border-radius: 5px;
+    color: #171717;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#retryButton:hover {
+    background: white;
+}
+
+/* LOBBY */
 
 #gameFrame {
     position: fixed;
     inset: 0;
+
     width: 100%;
     height: 100%;
+
     border: none;
     display: none;
-    background: #111;
+
+    background: #10131b;
+}
+
+/* MOBIL */
+
+@media(max-width: 600px) {
+    .logo {
+        font-size: 32px;
+    }
+
+    #startButton {
+        width: 230px;
+        height: 62px;
+        font-size: 21px;
+    }
 }
 </style>
 </head>
@@ -113,24 +207,38 @@ body {
 <!-- START -->
 
 <div id="startScreen">
+
     <button id="startButton" onclick="startGame()">
         START
     </button>
+
 </div>
 
 <!-- LADEN -->
 
 <div id="loadingScreen">
 
+    <div class="logo">
+        CUBE <span>WAR</span>
+    </div>
+
     <div id="status">
-        SERVER WIRD AUFGEWECKT ...
+        VERBINDUNG WIRD HERGESTELLT
+    </div>
+
+    <div id="description">
+        Der Spielserver wird aufgeweckt ...
     </div>
 
     <div id="progressContainer">
-        <div id="progressBar"></div>
+        <div id="progressBar" class="indeterminate"></div>
     </div>
 
     <div id="elapsed">0 s</div>
+
+    <button id="retryButton" onclick="startGame()">
+        ERNEUT VERSUCHEN
+    </button>
 
 </div>
 
@@ -138,48 +246,128 @@ body {
 
 <iframe
     id="gameFrame"
-    title="CUBE WARS"
+    title="CUBE WAR LOBBY"
     allow="fullscreen"
     allowfullscreen>
 </iframe>
 
 <script>
 
-// SERVER
+// ==================================
+// EINSTELLUNGEN
+// ==================================
+
+// Render-Server: nur zum Aufwecken und Prüfen.
 const SERVER_URL = "https://cube-quor.onrender.com";
 
-// SPIELSEITE
-const GAME_URL = SERVER_URL + "/";
-
-// STATUS-ENDPUNKT
 const HEALTH_URL = SERVER_URL + "/health";
+
+// GitHub-Pages-Lobby.
+// Beide Dateien liegen im selben Ordner.
+const LOBBY_URL = new URL("lobby.html", window.location.href).href;
 
 let started = false;
 let startTime = 0;
 let timeInterval = null;
 
-// ZEIT AKTUALISIEREN
+
+// ==================================
+// ELEMENTE
+// ==================================
+
+const startScreen = document.getElementById("startScreen");
+const loadingScreen = document.getElementById("loadingScreen");
+const gameFrame = document.getElementById("gameFrame");
+
+const statusText = document.getElementById("status");
+const description = document.getElementById("description");
+
+const progressBar = document.getElementById("progressBar");
+const elapsed = document.getElementById("elapsed");
+
+const startButton = document.getElementById("startButton");
+const retryButton = document.getElementById("retryButton");
+
+
+// ==================================
+// ZEIT
+// ==================================
+
 function updateTime() {
 
     const seconds = Math.floor(
         (Date.now() - startTime) / 1000
     );
 
-    document.getElementById("elapsed").textContent =
-        seconds + " s";
+    elapsed.textContent = seconds + " s";
 }
 
+
+// ==================================
+// LADESTATUS
+// ==================================
+
+function setStatus(title, text) {
+
+    statusText.textContent = title;
+    description.textContent = text;
+
+}
+
+
+// ==================================
+// LOBBY LADEN
+// ==================================
+
+function loadLobby() {
+
+    setStatus(
+        "SERVER ONLINE",
+        "CUBE WAR LOBBY WIRD GELADEN ..."
+    );
+
+    progressBar.classList.remove("indeterminate");
+    progressBar.style.width = "100%";
+
+    // Die Lobby liegt auf GitHub Pages,
+    // nicht auf dem Render-Server.
+
+    window.location.href = LOBBY_URL;
+
+}
+
+
+// ==================================
 // SERVER PRÜFEN
+// ==================================
+
 async function checkServer() {
+
+    setStatus(
+        "SERVER WIRD AUFGEWECKT",
+        "Bitte warten. Die Verbindung wird geprüft."
+    );
 
     while (started) {
 
         try {
 
-            const response = await fetch(HEALTH_URL, {
-                method: "GET",
-                cache: "no-store"
-            });
+            const controller = new AbortController();
+
+            const timeout = setTimeout(() => {
+                controller.abort();
+            }, 12000);
+
+            const response = await fetch(
+                HEALTH_URL + "?t=" + Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    signal: controller.signal
+                }
+            );
+
+            clearTimeout(timeout);
 
             if (response.ok) {
 
@@ -187,52 +375,45 @@ async function checkServer() {
 
                 if (data.online === true) {
 
-                    document.getElementById("status").textContent =
-                        "SERVER ONLINE";
-
-                    document.getElementById("progressBar").style.width =
-                        "100%";
+                    setStatus(
+                        "SERVER ONLINE",
+                        "Weiterleitung zur CUBE WAR Lobby ..."
+                    );
 
                     loadLobby();
+
                     return;
                 }
+
             }
+
+            setStatus(
+                "SERVER WIRD GESTARTET",
+                "Warte auf die Antwort des Spielservers ..."
+            );
 
         } catch (error) {
 
-            // Render noch nicht erreichbar.
-            // Wir prüfen erneut.
+            setStatus(
+                "VERBINDUNG WIRD HERGESTELLT",
+                "Der Server ist möglicherweise noch im Ruhezustand."
+            );
 
         }
 
-        await new Promise(resolve =>
-            setTimeout(resolve, 5000)
-        );
+        await new Promise(resolve => {
+            setTimeout(resolve, 5000);
+        });
+
     }
+
 }
 
-// LOBBY LADEN
-function loadLobby() {
 
-    const frame = document.getElementById("gameFrame");
-
-    document.getElementById("status").textContent =
-        "LOBBY WIRD GELADEN ...";
-
-    frame.onload = function() {
-
-        document.getElementById("loadingScreen").style.display =
-            "none";
-
-        frame.style.display = "block";
-
-        clearInterval(timeInterval);
-    };
-
-    frame.src = GAME_URL;
-}
-
+// ==================================
 // START
+// ==================================
+
 function startGame() {
 
     if (started) return;
@@ -240,21 +421,38 @@ function startGame() {
     started = true;
     startTime = Date.now();
 
-    document.getElementById("startScreen").style.display =
-        "none";
+    startScreen.style.display = "none";
+    loadingScreen.style.display = "flex";
 
-    document.getElementById("loadingScreen").style.display =
-        "flex";
+    retryButton.style.display = "none";
 
-    document.getElementById("status").textContent =
-        "SERVER WIRD AUFGEWECKT ...";
+    startButton.disabled = true;
 
-    timeInterval = setInterval(updateTime, 250);
+    progressBar.classList.add("indeterminate");
+    progressBar.style.width = "";
 
     updateTime();
 
+    timeInterval = setInterval(updateTime, 250);
+
     checkServer();
+
 }
+
+
+// ==================================
+// FEHLERBEHANDLUNG
+// ==================================
+
+// Falls die Seite während des Ladens
+// nicht weiterkommt, kann der Spieler
+// den Verbindungsversuch neu starten.
+
+window.addEventListener("error", event => {
+
+    console.error(event.error);
+
+});
 
 </script>
 
