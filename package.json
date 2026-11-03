@@ -1,0 +1,14 @@
+
+{
+  "name": "cube-wars",
+  "version": "1.0.0",
+  "description": "CUBE WARS - Low Poly Battle Royale",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
