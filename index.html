@@ -4,7 +4,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>CUBE WARS</title>
 
 <style>
@@ -27,35 +26,26 @@ body {
 #startScreen {
     position: fixed;
     inset: 0;
-
-    background:
-        url("hintergrund.png")
-        center center / cover no-repeat;
+    background: url("hintergrund.png") center center / cover no-repeat;
 
     display: flex;
     justify-content: center;
     align-items: flex-end;
-
     padding-bottom: 9vh;
 }
 
 #startButton {
     width: 270px;
     height: 70px;
-
     background: #ffcf00;
     border: none;
-
     color: #111;
     font-size: 25px;
     font-weight: 900;
     letter-spacing: 3px;
-
     cursor: pointer;
-
     transform: skew(-5deg);
     box-shadow: 0 5px 25px #0008;
-
     transition: .2s;
 }
 
@@ -64,24 +54,16 @@ body {
     transform: skew(-5deg) scale(1.07);
 }
 
-#startButton:active {
-    transform: skew(-5deg) scale(.96);
-}
-
 /* LADEBILDSCHIRM */
 
 #loadingScreen {
     position: fixed;
     inset: 0;
-
     background: #111;
-
     display: none;
     flex-direction: column;
-
     justify-content: center;
     align-items: center;
-
     color: white;
     gap: 18px;
 }
@@ -92,16 +74,9 @@ body {
     text-align: center;
 }
 
-#elapsed {
-    color: #ffcf00;
-    font-size: 22px;
-    font-weight: bold;
-}
-
 #progressContainer {
     width: min(450px, 80vw);
     height: 13px;
-
     background: #333;
     overflow: hidden;
 }
@@ -109,10 +84,14 @@ body {
 #progressBar {
     width: 0%;
     height: 100%;
-
     background: #ffcf00;
-
     transition: width .3s;
+}
+
+#elapsed {
+    color: #ffcf00;
+    font-size: 22px;
+    font-weight: bold;
 }
 
 /* SPIEL */
@@ -120,13 +99,10 @@ body {
 #gameFrame {
     position: fixed;
     inset: 0;
-
     width: 100%;
     height: 100%;
-
     border: none;
     display: none;
-
     background: #111;
 }
 </style>
@@ -134,17 +110,15 @@ body {
 
 <body>
 
-<!-- STARTSEITE -->
+<!-- START -->
 
 <div id="startScreen">
-
     <button id="startButton" onclick="startGame()">
         START
     </button>
-
 </div>
 
-<!-- LADESEITE -->
+<!-- LADEN -->
 
 <div id="loadingScreen">
 
@@ -156,13 +130,11 @@ body {
         <div id="progressBar"></div>
     </div>
 
-    <div id="elapsed">
-        0 s
-    </div>
+    <div id="elapsed">0 s</div>
 
 </div>
 
-<!-- SPIEL-IFRAME -->
+<!-- LOBBY -->
 
 <iframe
     id="gameFrame"
@@ -173,17 +145,20 @@ body {
 
 <script>
 
-/* SERVER */
-
+// SERVER
 const SERVER_URL = "https://cube-quor.onrender.com";
+
+// SPIELSEITE
 const GAME_URL = SERVER_URL + "/";
+
+// STATUS-ENDPUNKT
+const HEALTH_URL = SERVER_URL + "/health";
 
 let started = false;
 let startTime = 0;
 let timeInterval = null;
 
-/* WARTEZEIT */
-
+// ZEIT AKTUALISIEREN
 function updateTime() {
 
     const seconds = Math.floor(
@@ -194,40 +169,39 @@ function updateTime() {
         seconds + " s";
 }
 
-/* SERVER PRÜFEN */
-
+// SERVER PRÜFEN
 async function checkServer() {
 
     while (started) {
 
         try {
 
-            const response = await fetch(
-                SERVER_URL + "/",
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    mode: "cors"
-                }
-            );
+            const response = await fetch(HEALTH_URL, {
+                method: "GET",
+                cache: "no-store"
+            });
 
             if (response.ok) {
 
-                document.getElementById("status").textContent =
-                    "SERVER ONLINE";
+                const data = await response.json();
 
-                document.getElementById("progressBar").style.width =
-                    "100%";
+                if (data.online === true) {
 
-                loadLobby();
+                    document.getElementById("status").textContent =
+                        "SERVER ONLINE";
 
-                return;
+                    document.getElementById("progressBar").style.width =
+                        "100%";
+
+                    loadLobby();
+                    return;
+                }
             }
 
         } catch (error) {
 
-            // Server noch nicht erreichbar.
-            // Status bleibt stabil.
+            // Render noch nicht erreichbar.
+            // Wir prüfen erneut.
 
         }
 
@@ -237,8 +211,7 @@ async function checkServer() {
     }
 }
 
-/* LOBBY LADEN */
-
+// LOBBY LADEN
 function loadLobby() {
 
     const frame = document.getElementById("gameFrame");
@@ -259,8 +232,7 @@ function loadLobby() {
     frame.src = GAME_URL;
 }
 
-/* START */
-
+// START
 function startGame() {
 
     if (started) return;
